@@ -1,9 +1,4 @@
 #include <ExpensesSmartContract.hpp>
-ACTION ExpensesSmartContract::hi( name nm )
-{
-   /* fill in action body */
-   print_f("Name : %\n",nm);
-}
 
 class [[eosio::contract]] employee_table : public contract
 {
@@ -11,43 +6,61 @@ class [[eosio::contract]] employee_table : public contract
       using contract::contract;
       
       [[eosio::action]]
-      void addemp( account_name const user, string employee_name )
+      void addemp( eosio::name const user, eosio::name const account_name )
+      {
+        require_auth(user);
+        eosio::check(user!=employers.end(), "You must be an employer to perform this function");
+        employee_table _employee_table(_self, _self.value);
+        eosio::check(_employee_table.find(account_name.value)==_employee_table.end(), "Employee has already been added");
+        employee_table.emplace(_self, [&](auto & entry)
+            {
+              entry.employee_name = employee_name;
+            });
+      }
+      
+      [[eosio::action]]
+      void setsal( eosio::name const user, eosio::name const account_name, uint64_t salary)
+      {
+        require_auth(user);
+        eosio::check(user!=employers.end(), "You must be an employer to perform this function");
+        employee_table _employee_table(_self, _self.value);
+         eosio::check(_employee_table.find(account_name.value)!=_employee_table.end(), "Employee must be added to assign a salary");
+        _employee_table.modify(_employee_table.find(account_name), _self, [&](auto & entry)
+            {
+              entry.salary = employee_salary;
+            });
+      }
+      
+      [[eosio::action]]
+      void delemp( eosio::name const user, eosio::name const account_name)
+      {
+        require_auth(user);
+        eosio::check(user!=employers.end(), "You must be an employer to perform this function");
+        employee_table _employee_table(_self, _self.value);
+        eosio::check(_employee_table.find(account_name.value)!=_employee_table.end(), "Employee must be added to delete the employee");
+        _employee_table.erase(_employee_table.find(account_name));
+      }
+      
+      [[eosio::action]]
+      void addexp( eosio::name const user, eosio::name const account_name, vector<uint64_t> expenses)
       {
         
       }
       
       [[eosio::action]]
-      void setsal( account_name const user, string employee_name, uint64_t salary)
+      void appexp( eosio::name const user)
       {
         
       }
       
       [[eosio::action]]
-      void delemp( account_name const user, string employee_name)
+      void rejexp( eosio::name const user)
       {
         
       }
       
       [[eosio::action]]
-      void claimexp( account_name const user, string employee_name, uint64_t expenses)
-      {
-        
-      }
-      
-      [[eosio::action]]
-      void appexp( account_name const user)
-      {
-        
-      }
-      
-      [[eosio::action]]
-      void rejexp( account_name const user)
-      {
-        
-      }
-      
-      [[eosio::action]]
-      void paysal( account_name const user)
+      void paysal( eosio::name const user)
       {
         
       }
