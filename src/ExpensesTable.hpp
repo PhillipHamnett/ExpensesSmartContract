@@ -3,6 +3,7 @@ using namespace std;
 
 TABLE expenses_list
 {
+   uint64_t id;
    eosio::name const account_name;
    string expense_name;
    uint64_t expense_amount;
