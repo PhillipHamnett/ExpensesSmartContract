@@ -1,4 +1,5 @@
 #include <EmployeeTable.hpp>
+#include <EmployersTable.hpp>
 #include <ExpensesTable.hpp>
 
 class [[eosio::contract]] employee_table : public contract
@@ -61,7 +62,7 @@ class [[eosio::contract]] employee_table : public contract
         expenses_table _expenses_table(_self, _self.value);
         _employee_table.emplace(_self, [&](auto & entry)
             {
-              id = _expenses_table.find() //the id of the last expense in the table +1
+              entry.id = _expenses_table.available_primary_key();
               entry.user = account_name;
               entry.expense_name = expense_name;
               entry.expense_amount = expense_amount;
@@ -78,8 +79,8 @@ class [[eosio::contract]] employee_table : public contract
         eosio::check(user!=employers_table.end(), "You must be an employer to perform this function");
         expenses_table _expenses_table(_self, _self.value);
         eosio::check(expense_id!=_expenses_table.end()) "You must enter the id of an expense currently in the table"
-        //need to add a check if the expense is already approved?
-        _expenses_table.modify(_expenses_table.find(expense_id), _self, [&] auto & entry) //is it ok to use the expense_id to find or do I need to use the primary key?
+        eosio::check(_expenses_table.find(expense_id).approved!=true) "This expense has already been approved"
+        _expenses_table.modify(_expenses_table.find(expense_id), _self, [&] auto & entry)
             {
               approved = true;
             });
@@ -92,12 +93,45 @@ class [[eosio::contract]] employee_table : public contract
         eosio::check(user!=employers_table.end(), "You must be an employer to perform this function");
         expenses_table _expenses_table(_self, _self.value);
         eosio::check(expense_id!=_expenses_table.end()) "You must enter the id of an expense currently in the table"
-        _expenses_table.erase(_expenses_table.find(expense_id));//is it ok to use the expense_id to find or do I need to use the primary key?
+        _expenses_table.erase(_expenses_table.find(expense_id));
       }
       
       [[eosio::action]]
       void paysal( eosio::name const user)
       {
-        
+        require_auth(user);
+        eosio::check(user!=employers_table.end(), "You must be an employer to perform this function");
+        employee_table _employee_table(_self, _self.value);
+        for (auto itr = _employee_table.begin(); itr != _employee_table.end(); ++itr)
+        {
+          eosio::action payout(eosio::permission_level{_self, N(active)},
+            N(eosio.token), N(transfer),
+            std::make_tuple(_self, itr->account_name, itr->employee_salary, std::string("EOS42 salary")));
+          payout.send();
+        }
+      }
+      
+      [[eosio::action]]
+      void payexp( eosio::name const user)
+      {
+        require_auth(user);
+        eosio::check(user!=employers_table.end(), "You must be an employer to perform this function");
+        expenses_table _expenses_table(_self, _self.value);
+        auto itr = _expenses_table.begin();
+        while (itr != _expenses_table.end())
+        {
+          if (itr->approved)
+          {
+            eosio::action payout(eosio::permission_level{_self, N(active)},
+              N(eosio.token), N(transfer),
+              std::make_tuple(_self, itr->account_name, itr->expense_amount, std::string("EOS42 expense - id "id")));
+            payout.send();
+            itr = _expenses_table.erase(itr);
+          }
+          else 
+          {
+            ++itr;
+          }
+        }
       }
 }
