@@ -7,6 +7,4 @@
 using namespace eosio;
 using namespace std;
 
-
-
 #endif /* EMPLOYEETABLE_HPP_ */
