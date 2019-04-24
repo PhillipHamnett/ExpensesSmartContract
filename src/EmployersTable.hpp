@@ -1,5 +1,5 @@
-#ifndef EXPENSESTABLE_HPP_
-#define EXPENSESTABLE_HPP_
+#ifndef EMPLOYERSTABLE_HPP_
+#define EMPLOYERSTABLE_HPP_
 
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
@@ -8,4 +8,4 @@ using namespace eosio;
 using namespace std;
 
 
-#endif /* EXPENSESTABLE_HPP_ */
+#endif /* EMPLOYERSTABLE_HPP_ */
